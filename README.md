@@ -1,6 +1,6 @@
-# 🎭 Emoji Force - PWA para Magos
+# Scroll Force - PWA para Magos
 
-App profesional de forzaje de imágenes/emojis con autenticación y personalización.
+App profesional de forzaje de imágenes con autenticación y personalización.
 
 ## 📁 Estructura del Proyecto
 

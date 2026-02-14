@@ -152,7 +152,7 @@
 
     <div class="card">
       <label for="forcedImage">Imagen forzada</label>
-        <select id="forcedImage">
+      <select id="forcedImage">
         <option value="./1.jpg">Imagen 1</option>
         <option value="./2.jpg">Imagen 2</option>
         <option value="./3.jpg">Imagen 3</option>
@@ -181,6 +181,8 @@
   </div>
 
   <script>
+    const LOGOUT_FUNCTION_URL = "https://zgatennqbagmyfbpiakr.supabase.co/functions/v1/logout";
+
     // ============================
     // VALIDAR SESIÓN LOCAL
     // ============================
@@ -207,7 +209,6 @@
     const scrollModeSelect = document.getElementById("scrollMode");
     const counterModeSelect = document.getElementById("counterMode");
     const forcedImageSelect = document.getElementById("forcedImage");
-
     const msg = document.getElementById("msg");
 
     // ============================
@@ -251,16 +252,37 @@
     });
 
     // ============================
-    // CERRAR SESIÓN
+    // LOGOUT REAL EN SUPABASE
     // ============================
-    document.getElementById("logoutBtn").addEventListener("click", () => {
+    async function logoutReal() {
+      const code = localStorage.getItem("license_code");
+      const session_id = localStorage.getItem("session_id");
+      const device_id = localStorage.getItem("device_id");
+
+      msg.textContent = "Cerrando sesión...";
+
+      try {
+        await fetch(LOGOUT_FUNCTION_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, session_id, device_id })
+        });
+      } catch (err) {
+        // si falla internet igual limpiamos local
+      }
+
       localStorage.removeItem("license_code");
       localStorage.removeItem("session_id");
-      msg.textContent = "Sesión cerrada.";
+      localStorage.removeItem("device_id");
+
+      msg.textContent = "Sesión cerrada ✔";
+
       setTimeout(() => {
         window.location.href = "./login.html";
-      }, 500);
-    });
+      }, 400);
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", logoutReal);
 
     // ============================
     // RESETEAR SETTINGS
@@ -272,7 +294,7 @@
       localStorage.removeItem("forcedImage");
 
       loadSettings();
-      msg.textContent = "Configuración reseteada.";
+      msg.textContent = "Configuración reseteada ✔";
     });
   </script>
 

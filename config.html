@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <title>Configuración - Emoji Force</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .image-slot {
+            aspect-ratio: 1;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .image-slot:hover {
+            border-color: #667eea;
+        }
+
+        .image-slot.has-image {
+            border-style: solid;
+            border-color: #667eea;
+        }
+
+        .image-slot.force {
+            border-color: #e74c3c;
+            border-width: 3px;
+        }
+
+        .image-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-slot .placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+            font-size: 36px;
+        }
+
+        .image-slot .number {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .image-slot .force-badge {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: #e74c3c;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .image-slot .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .image-slot.has-image .remove-btn {
+            display: block;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .force-selector {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .force-selector label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .force-selector select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            color: #1976d2;
+            font-size: 14px;
+        }
+
+        .info strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Configuración</h1>
+            <p>Personaliza tu galería de imágenes</p>
+        </div>
+
+        <div class="card">
+            <h2>Tus Imágenes</h2>
+            <div class="info">
+                <strong>Instrucciones:</strong>
+                Toca cada cuadro para subir una imagen desde tu galería. La imagen marcada en rojo será la que se forzará después de 10 toques.
+            </div>
+
+            <div class="image-grid" id="imageGrid"></div>
+
+            <div class="force-selector">
+                <label for="forceSelect">Imagen a Forzar:</label>
+                <select id="forceSelect">
+                    <option value="1">Imagen 1</option>
+                    <option value="2">Imagen 2</option>
+                    <option value="3">Imagen 3</option>
+                    <option value="4" selected>Imagen 4</option>
+                    <option value="5">Imagen 5</option>
+                    <option value="6">Imagen 6</option>
+                    <option value="7">Imagen 7</option>
+                    <option value="8">Imagen 8</option>
+                    <option value="9">Imagen 9</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Acciones</h2>
+            <div class="buttons">
+                <button class="btn btn-secondary" id="resetBtn">Restaurar Por Defecto</button>
+            </div>
+        </div>
+
+        <div class="back-link">
+            <a href="./index.html">← Volver a la Galería</a>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*">
+
+    <script>
+        const TOTAL_IMAGES = 9;
+        let db;
+        let currentEditingIndex = null;
+        let forceImageIndex = 4;
+
+        const imageGrid = document.getElementById('imageGrid');
+        const fileInput = document.getElementById('fileInput');
+        const forceSelect = document.getElementById('forceSelect');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Init IndexedDB
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('EmojiForceDB', 1);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('images')) {
+                        db.createObjectStore('images', { keyPath: 'index' });
+                    }
+                };
+            });
+        }
+
+        // Guardar imagen en IndexedDB
+        function saveImage(index, dataUrl) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['images'], 'readwrite');
+                const store = transaction.objectStore('images');
+                const request = store.put({ index, dataUrl });
+
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Obtener imagen de IndexedDB
+        function getImage(index) {
+            return new Promise((resolve) => {
+                const transaction = db.transaction(['images'], 'readonly');
+                const store = transaction.objectStore('images');
+                const request = store.get(index);
+
+                request.onsuccess = () => {
+                    if (request.result && request.result.dataUrl) {
+                        resolve(request.result.dataUrl);
+                    } else {
+                        resolve(null);
+                    }
+                };
+
+                request.onerror = () => resolve(null);
+            });
+        }
+
+        // Eliminar imagen de IndexedDB
+        function deleteImage(index) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['images'], 'readwrite');
+                const store = transaction.objectStore('images');
+                const request = store.delete(index);
+
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Crear grid de imágenes
+        async function renderImageGrid() {
+            imageGrid.innerHTML = '';
+
+            for (let i = 1; i <= TOTAL_IMAGES; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'image-slot';
+                slot.dataset.index = i;
+
+                const number = document.createElement('div');
+                number.className = 'number';
+                number.textContent = i;
+                slot.appendChild(number);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeImage(i);
+                };
+                slot.appendChild(removeBtn);
+
+                if (i === forceImageIndex) {
+                    slot.classList.add('force');
+                    const badge = document.createElement('div');
+                    badge.className = 'force-badge';
+                    badge.textContent = 'FORZAJE';
+                    slot.appendChild(badge);
+                }
+
+                const savedImage = await getImage(i);
+
+                if (savedImage) {
+                    const img = document.createElement('img');
+                    img.src = savedImage;
+                    slot.appendChild(img);
+                    slot.classList.add('has-image');
+                } else {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'placeholder';
+                    placeholder.textContent = '+';
+                    slot.appendChild(placeholder);
+                }
+
+                slot.onclick = () => selectImage(i);
+                imageGrid.appendChild(slot);
+            }
+        }
+
+        // Seleccionar imagen para editar
+        function selectImage(index) {
+            currentEditingIndex = index;
+            fileInput.click();
+        }
+
+        // Manejar selección de archivo
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || !currentEditingIndex) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                await saveImage(currentEditingIndex, event.target.result);
+                await renderImageGrid();
+                currentEditingIndex = null;
+                fileInput.value = '';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Eliminar imagen
+        async function removeImage(index) {
+            if (confirm(`¿Eliminar imagen ${index}?`)) {
+                await deleteImage(index);
+                await renderImageGrid();
+            }
+        }
+
+        // Cambiar imagen de forzaje
+        forceSelect.addEventListener('change', async (e) => {
+            forceImageIndex = parseInt(e.target.value);
+            localStorage.setItem('forceImageIndex', forceImageIndex);
+            await renderImageGrid();
+        });
+
+        // Restaurar valores por defecto
+        resetBtn.addEventListener('click', async () => {
+            if (confirm('¿Seguro que quieres eliminar todas las imágenes personalizadas?')) {
+                const transaction = db.transaction(['images'], 'readwrite');
+                const store = transaction.objectStore('images');
+                const request = store.clear();
+
+                request.onsuccess = async () => {
+                    forceImageIndex = 4;
+                    forceSelect.value = '4';
+                    localStorage.setItem('forceImageIndex', 4);
+                    await renderImageGrid();
+                    alert('Configuración restaurada');
+                };
+            }
+        });
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initDB();
+
+            // Cargar índice de forzaje guardado
+            const savedForceIndex = localStorage.getItem('forceImageIndex');
+            if (savedForceIndex) {
+                forceImageIndex = parseInt(savedForceIndex);
+                forceSelect.value = forceImageIndex;
+            }
+
+            await renderImageGrid();
+        });
+    </script>
+</body>
+</html>

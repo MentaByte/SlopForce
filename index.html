@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Emoji Force</title>
+    <link rel="manifest" href="./manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000000;
+            height: 100vh;
+            width: 100vw;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            touch-action: pan-y;
+        }
+
+        /* Pantalla de activación */
+        #activationScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 10000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #activationScreen.active {
+            display: flex;
+        }
+
+        .activation-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .activation-card h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .activation-card p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .code-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .activate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .activate-btn:active {
+            transform: scale(0.98);
+        }
+
+        .activate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Galería principal */
+        .gallery-container {
+            width: 100vw;
+            height: 100vh;
+            overflow-y: auto;
+            scroll-snap-type: y mandatory;
+            display: flex;
+            flex-direction: column;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .gallery {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gallery img {
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;
+            scroll-snap-align: start;
+            flex: 0 0 auto;
+        }
+
+        /* Contador de toques */
+        #touchCounter {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #cccccc;
+            padding: 2px 8px;
+            border-radius: 10px;
+            z-index: 1000;
+            font-size: 12px;
+        }
+
+        /* Imagen a pantalla completa (forzaje) */
+        #fullScreenImage {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;
+            background-color: #000000;
+            z-index: 9999;
+        }
+
+        /* Botón de configuración */
+        #configButton {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            transition: background-color 0.3s;
+        }
+
+        #configButton.show {
+            display: flex;
+        }
+
+        #configButton:active {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Botón de instalación */
+        #installButton {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 20px;
+            z-index: 1000;
+            display: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        .spinner.show {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Pantalla de activación -->
+    <div id="activationScreen" class="active">
+        <div class="activation-card">
+            <h1>🎭 Emoji Force</h1>
+            <p>Ingresa tu código de activación</p>
+            <input 
+                type="text" 
+                id="codeInput" 
+                class="code-input" 
+                placeholder="EMOJI-XXXX-XXXX"
+                maxlength="17"
+            >
+            <button id="activateBtn" class="activate-btn">Activar</button>
+            <div class="spinner" id="loadingSpinner"></div>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+    </div>
+
+    <!-- Galería principal -->
+    <div class="gallery-container" id="galleryContainer">
+        <div class="gallery" id="gallery"></div>
+    </div>
+
+    <div id="touchCounter">0</div>
+    <button id="configButton">⚙️</button>
+    <button id="installButton">Instalar App</button>
+    <img id="fullScreenImage" alt="Forzaje">
+
+    <script>
+        // Configuración
+        const SUPABASE_URL = 'https://zgatennqbagmyfbpiakr.supabase.co';
+        const TOTAL_IMAGES = 9;
+        const FORCE_IMAGE_INDEX = 4; // Imagen 4.jpg por defecto
+        const TOUCH_THRESHOLD = 10;
+
+        // Estado global
+        let touchCount = 0;
+        let isCounting = true;
+        let activationCode = null;
+        let sessionId = null;
+
+        // Elementos DOM
+        const activationScreen = document.getElementById('activationScreen');
+        const codeInput = document.getElementById('codeInput');
+        const activateBtn = document.getElementById('activateBtn');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorMessage = document.getElementById('errorMessage');
+        const galleryContainer = document.getElementById('galleryContainer');
+        const gallery = document.getElementById('gallery');
+        const touchCounterElement = document.getElementById('touchCounter');
+        const fullScreenImage = document.getElementById('fullScreenImage');
+        const configButton = document.getElementById('configButton');
+        const installButton = document.getElementById('installButton');
+
+        // IndexedDB
+        let db;
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('EmojiForceDB', 1);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('images')) {
+                        db.createObjectStore('images', { keyPath: 'index' });
+                    }
+                };
+            });
+        }
+
+        // Device info
+        function getDeviceInfo() {
+            return {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                screen: `${screen.width}x${screen.height}`
+            };
+        }
+
+        // Activar código
+        async function activateCode(code) {
+            try {
+                loadingSpinner.classList.add('show');
+                errorMessage.classList.remove('show');
+                activateBtn.disabled = true;
+
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/loginWithCode`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: code,
+                        deviceInfo: JSON.stringify(getDeviceInfo())
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error al activar código');
+                }
+
+                localStorage.setItem('activationCode', data.code);
+                localStorage.setItem('sessionId', data.session_id);
+                
+                activationCode = data.code;
+                sessionId = data.session_id;
+
+                activationScreen.classList.remove('active');
+                configButton.classList.add('show');
+                
+                await loadGallery();
+
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.classList.add('show');
+            } finally {
+                loadingSpinner.classList.remove('show');
+                activateBtn.disabled = false;
+            }
+        }
+
+        // Validar sesión
+        async function validateSession(code) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/validate-session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: code,
+                        deviceInfo: JSON.stringify(getDeviceInfo())
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Sesión inválida');
+                }
+
+                localStorage.setItem('sessionId', data.session_id);
+                sessionId = data.session_id;
+
+                return true;
+
+            } catch (error) {
+                console.error('Error validando sesión:', error);
+                localStorage.removeItem('activationCode');
+                localStorage.removeItem('sessionId');
+                activationScreen.classList.add('active');
+                configButton.classList.remove('show');
+                return false;
+            }
+        }
+
+        // Obtener imagen
+        async function getImageSrc(index) {
+            if (!db) await initDB();
+
+            return new Promise((resolve) => {
+                const transaction = db.transaction(['images'], 'readonly');
+                const store = transaction.objectStore('images');
+                const request = store.get(index);
+
+                request.onsuccess = () => {
+                    if (request.result && request.result.dataUrl) {
+                        resolve(request.result.dataUrl);
+                    } else {
+                        resolve(`./images/${index}.jpg`);
+                    }
+                };
+
+                request.onerror = () => {
+                    resolve(`./images/${index}.jpg`);
+                };
+            });
+        }
+
+        // Cargar galería
+        async function loadGallery() {
+            gallery.innerHTML = '';
+
+            for (let i = 1; i <= TOTAL_IMAGES; i++) {
+                const img = document.createElement('img');
+                img.src = await getImageSrc(i);
+                img.alt = `Imagen ${i}`;
+                gallery.appendChild(img);
+            }
+
+            fullScreenImage.src = await getImageSrc(FORCE_IMAGE_INDEX);
+        }
+
+        // Bucle infinito
+        function loopGallery() {
+            const scrollTop = galleryContainer.scrollTop;
+            const totalHeight = gallery.scrollHeight - galleryContainer.clientHeight;
+
+            if (scrollTop >= totalHeight - 10) {
+                const images = Array.from(gallery.children);
+                images.forEach(img => {
+                    const clone = img.cloneNode(true);
+                    gallery.appendChild(clone);
+                });
+            }
+        }
+
+        // Contador de toques
+        function incrementTouchCount() {
+            if (!isCounting) return;
+            
+            touchCount++;
+            touchCounterElement.textContent = touchCount;
+
+            if (touchCount >= TOUCH_THRESHOLD) {
+                fullScreenImage.style.display = 'block';
+                isCounting = false;
+                
+                if (navigator.vibrate) navigator.vibrate(200);
+                enterFullscreen();
+            }
+        }
+
+        function enterFullscreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(() => {});
+            }
+        }
+
+        function lockOrientation() {
+            if (screen.orientation?.lock) {
+                screen.orientation.lock('portrait').catch(() => {});
+            }
+        }
+
+        // PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installButton.style.display = 'block';
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') installButton.style.display = 'none';
+            deferredPrompt = null;
+        });
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('SW registrado'))
+                .catch(err => console.log('Error SW:', err));
+        }
+
+        // Events
+        galleryContainer.addEventListener('scroll', loopGallery);
+        document.body.addEventListener('touchstart', incrementTouchCount);
+
+        activateBtn.addEventListener('click', () => {
+            const code = codeInput.value.trim();
+            if (code) activateCode(code);
+        });
+
+        codeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') activateBtn.click();
+        });
+
+        configButton.addEventListener('click', () => {
+            window.location.href = './config.html';
+        });
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initDB();
+
+            const savedCode = localStorage.getItem('activationCode');
+            
+            if (savedCode) {
+                activationCode = savedCode;
+                const isValid = await validateSession(savedCode);
+                
+                if (isValid) {
+                    activationScreen.classList.remove('active');
+                    configButton.classList.add('show');
+                    await loadGallery();
+                }
+            }
+
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                setTimeout(() => {
+                    lockOrientation();
+                    enterFullscreen();
+                }, 500);
+            }
+        });
+    </script>
+</body>
+</html>

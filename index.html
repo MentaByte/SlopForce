@@ -895,9 +895,12 @@
                 installHint.style.display = 'block';
             }
             
-            // Si está en modo standalone (PWA instalada) y hay código guardado, saltar login
-            if (standalone && savedCode) {
-                activationCode = savedCode;
+            // Si está en modo standalone (PWA instalada), SIEMPRE cargar la galería sin login
+            if (standalone) {
+                activationCode = savedCode || 'standalone-mode'; // Guardar un código genérico si no hay
+                if (!savedCode) {
+                    localStorage.setItem('activationCode', 'standalone-mode');
+                }
                 activationScreen.classList.remove('active');
                 configButton.classList.add('show');
                 await loadGallery();
@@ -920,22 +923,12 @@
                     
                     // SIEMPRE mostrar pantalla de instalación si está en navegador
                     // NUNCA cargar la galería desde el navegador
-                    if (!standalone) {
-                        forceInstallScreen.classList.add('active');
-                    } else {
-                        // Solo cargar galería si está en modo standalone (app instalada)
-                        configButton.classList.add('show');
-                        await loadGallery();
-                    }
+                    forceInstallScreen.classList.add('active');
                 } else {
                     activationScreen.classList.add('active');
                 }
             } else {
-                activationScreen.classList.add('active');
-            }
-
-            // Si está en standalone sin código guardado, mostrar activación
-            if (standalone && !savedCode) {
+                // Sin código guardado y en navegador: mostrar pantalla de activación
                 activationScreen.classList.add('active');
             }
         });

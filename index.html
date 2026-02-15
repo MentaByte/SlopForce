@@ -201,44 +201,7 @@
             z-index: 9999;
         }
 
-        /* Botón de instalación */
-        #installButton {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 20px;
-            z-index: 1000;
-            display: none;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        /* Loading spinner */
-        .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-            display: none;
-        }
-
-        .spinner.show {
-            display: block;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Pantalla de bloqueo */
+        /* Pantalla de bloqueo para forzar instalación */
         #forceInstallScreen {
             display: none;
             position: fixed;
@@ -281,7 +244,7 @@
 
         .force-install-card p {
             color: #666;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             font-size: 16px;
             line-height: 1.5;
         }
@@ -300,35 +263,139 @@
             animation: pulsebtn 2s infinite;
         }
 
+        .install-giant-btn:active {
+            transform: scale(0.95);
+        }
+
         @keyframes pulsebtn {
             0%, 100% {
                 transform: scale(1);
+                box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
             }
             50% {
                 transform: scale(1.03);
+                box-shadow: 0 12px 35px rgba(76, 175, 80, 0.6);
             }
+        }
+
+        /* Botón de instalación - GIGANTE */
+        #installButton {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 30px 50px;
+            border-radius: 20px;
+            z-index: 10001;
+            display: none;
+            font-size: 24px;
+            font-weight: 700;
+            box-shadow: 0 10px 40px rgba(76, 175, 80, 0.5);
+            cursor: pointer;
+            animation: pulse 2s infinite;
+            text-align: center;
+            max-width: 90%;
+        }
+
+        #installButton::before {
+            content: '📱';
+            display: block;
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        #installButton::after {
+            content: 'Toca para instalar';
+            display: block;
+            font-size: 16px;
+            font-weight: 400;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 10px 40px rgba(76, 175, 80, 0.5);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.05);
+                box-shadow: 0 15px 60px rgba(76, 175, 80, 0.7);
+            }
+        }
+
+        #installButton:active {
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        /* Overlay detrás del botón */
+        #installOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+        }
+
+        #installOverlay.show {
+            display: block;
+        }
+
+        #installButton.show {
+            display: block;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        .spinner.show {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <!-- Pantalla de bloqueo -->
+    <!-- Pantalla de bloqueo para forzar instalación -->
     <div id="forceInstallScreen">
         <div class="force-install-card">
             <div class="emoji">📱</div>
             <h2>¡Instala la App!</h2>
-            <p>Para usar Scroll Force, necesitas instalarla en tu pantalla de inicio.</p>
+            <p>Para usar Scroll Force, necesitas instalarla en tu pantalla de inicio. Es rápido y solo toma un toque.</p>
             <button id="forceInstallBtn" class="install-giant-btn">📲 Instalar Ahora</button>
-            <p style="margin-top: 15px; font-size: 13px; color: #999;">
-                Si el botón no funciona, usa el menú de tu navegador (⋮)
-            </p>
         </div>
     </div>
+
+    <!-- Overlay para instalación -->
+    <div id="installOverlay"></div>
+    
+    <!-- Botón de instalación GIGANTE -->
+    <button id="installButton">INSTALAR APP</button>
 
     <!-- Pantalla de activación -->
     <div id="activationScreen" class="active">
         <div class="activation-card">
-            <h1> Scroll Force</h1>
-            <p>Ingresa tu código de activación</p>
+            <h1>Scroll Force</h1>
+            <p id="activationMessage">Ingresa tu código de activación</p>
             <input 
                 type="text" 
                 id="codeInput" 
@@ -339,6 +406,9 @@
             <button id="activateBtn" class="activate-btn">Activar</button>
             <div class="spinner" id="loadingSpinner"></div>
             <div class="error-message" id="errorMessage"></div>
+            <p id="installHint" style="margin-top: 15px; font-size: 13px; color: #999; display: none;">
+                Después de activar, instala la app en tu pantalla de inicio para un acceso rápido
+            </p>
         </div>
     </div>
 
@@ -378,8 +448,11 @@
         const fullScreenImage = document.getElementById('fullScreenImage');
         const configButton = document.getElementById('configButton');
         const installButton = document.getElementById('installButton');
+        const installOverlay = document.getElementById('installOverlay');
         const forceInstallScreen = document.getElementById('forceInstallScreen');
         const forceInstallBtn = document.getElementById('forceInstallBtn');
+        const installHint = document.getElementById('installHint');
+        const activationMessage = document.getElementById('activationMessage');
 
         // IndexedDB
         let db;
@@ -407,12 +480,22 @@
         function loadConfig() {
             const savedForceIndex = localStorage.getItem('forceImageIndex');
             const savedTouchThreshold = localStorage.getItem('touchThreshold');
+            const savedCounterOpacity = localStorage.getItem('counterOpacity');
+            const savedConfigBtnOpacity = localStorage.getItem('configBtnOpacity');
             
             if (savedForceIndex) {
                 FORCE_IMAGE_INDEX = parseInt(savedForceIndex);
             }
             if (savedTouchThreshold) {
                 TOUCH_THRESHOLD = parseInt(savedTouchThreshold);
+            }
+            if (savedCounterOpacity) {
+                const opacity = parseInt(savedCounterOpacity) / 100;
+                touchCounterElement.style.opacity = opacity;
+            }
+            if (savedConfigBtnOpacity) {
+                const opacity = parseInt(savedConfigBtnOpacity) / 100;
+                configButton.style.opacity = opacity;
             }
         }
 
@@ -459,14 +542,11 @@
 
                 activationScreen.classList.remove('active');
                 
-                // Detectar standalone
-                const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                                   window.navigator.standalone ||
-                                   document.referrer.includes('android-app://');
-                
-                if (!isStandalone) {
+                // Si está en navegador (no standalone), mostrar pantalla de instalación
+                if (!isStandalone()) {
                     forceInstallScreen.classList.add('active');
                 } else {
+                    // Si está en standalone, cargar la galería normalmente
                     configButton.classList.add('show');
                     await loadGallery();
                 }
@@ -599,14 +679,47 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installButton.style.display = 'block';
+            // No mostrar automáticamente el botón flotante si está la pantalla de bloqueo
         });
 
+        // Botón en la pantalla de bloqueo
+        forceInstallBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                alert('Para instalar la app, usa el menú de tu navegador (⋮) y selecciona "Agregar a pantalla de inicio" o "Instalar app"');
+                return;
+            }
+            
+            try {
+                await deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                
+                // Solo mostrar mensaje de éxito, pero NO cargar la galería
+                if (outcome === 'accepted') {
+                    // Actualizar el mensaje para indicar que debe abrir desde el ícono
+                    const card = document.querySelector('.force-install-card');
+                    card.innerHTML = `
+                        <div class="emoji">✅</div>
+                        <h2>¡App Instalada!</h2>
+                        <p>Ahora cierra esta pestaña y abre Scroll Force desde el ícono en tu pantalla de inicio.</p>
+                    `;
+                }
+                // Si rechazó, la pantalla se queda para que intente de nuevo
+                
+                deferredPrompt = null;
+            } catch (error) {
+                console.error('Error al instalar:', error);
+            }
+        });
+
+        // Botón flotante (ahora sin uso, pero lo dejamos por si acaso)
         installButton.addEventListener('click', async () => {
             if (!deferredPrompt) return;
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') installButton.style.display = 'none';
+            if (outcome === 'accepted') {
+                installButton.classList.remove('show');
+                installOverlay.classList.remove('show');
+            }
             deferredPrompt = null;
         });
 
@@ -634,32 +747,12 @@
             window.location.href = './config.html';
         });
 
-        // PWA
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-        });
-
-        forceInstallBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) {
-                alert('Para instalar, usa el menú de tu navegador (⋮) y selecciona "Agregar a pantalla de inicio"');
-                return;
-            }
-            
-            await deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            
-            if (outcome === 'accepted') {
-                const card = document.querySelector('.force-install-card');
-                card.innerHTML = `
-                    <div class="emoji">✅</div>
-                    <h2>¡App Instalada!</h2>
-                    <p>Cierra esta pestaña y abre Scroll Force desde el ícono en tu pantalla de inicio.</p>
-                `;
-            }
-            deferredPrompt = null;
-        });
+        // Detectar si está en modo standalone (PWA instalada)
+        function isStandalone() {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone ||
+                   document.referrer.includes('android-app://');
+        }
 
         // Init
         document.addEventListener('DOMContentLoaded', async () => {
@@ -667,17 +760,21 @@
             loadConfig();
 
             const savedCode = localStorage.getItem('activationCode');
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                               window.navigator.standalone ||
-                               document.referrer.includes('android-app://');
+            const standalone = isStandalone();
             
-            // Standalone con código: saltar login
-            if (isStandalone && savedCode) {
+            // Mostrar hint de instalación solo si está en navegador
+            if (!standalone) {
+                installHint.style.display = 'block';
+            }
+            
+            // Si está en modo standalone (PWA instalada) y hay código guardado, saltar login
+            if (standalone && savedCode) {
                 activationCode = savedCode;
                 activationScreen.classList.remove('active');
                 configButton.classList.add('show');
                 await loadGallery();
                 
+                // Entrar en fullscreen después de un breve delay
                 setTimeout(() => {
                     lockOrientation();
                     enterFullscreen();
@@ -685,7 +782,7 @@
                 return;
             }
             
-            // Navegador: verificar sesión
+            // Si está en navegador (no standalone), verificar sesión
             if (savedCode) {
                 activationCode = savedCode;
                 const isValid = await validateSession(savedCode);
@@ -693,9 +790,12 @@
                 if (isValid) {
                     activationScreen.classList.remove('active');
                     
-                    if (!isStandalone) {
+                    // SIEMPRE mostrar pantalla de instalación si está en navegador
+                    // NUNCA cargar la galería desde el navegador
+                    if (!standalone) {
                         forceInstallScreen.classList.add('active');
                     } else {
+                        // Solo cargar galería si está en modo standalone (app instalada)
                         configButton.classList.add('show');
                         await loadGallery();
                     }
@@ -703,6 +803,11 @@
                     activationScreen.classList.add('active');
                 }
             } else {
+                activationScreen.classList.add('active');
+            }
+
+            // Si está en standalone sin código guardado, mostrar activación
+            if (standalone && !savedCode) {
                 activationScreen.classList.add('active');
             }
         });

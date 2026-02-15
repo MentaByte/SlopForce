@@ -380,8 +380,11 @@
         <div class="force-install-card">
             <div class="emoji">📱</div>
             <h2>¡Instala la App!</h2>
-            <p>Para usar Scroll Force, necesitas instalarla en tu pantalla de inicio. Es rápido y solo toma un toque.</p>
+            <p>Para usar Scroll Force, necesitas instalarla en tu pantalla de inicio.</p>
             <button id="forceInstallBtn" class="install-giant-btn">📲 Instalar Ahora</button>
+            <p style="margin-top: 15px; font-size: 13px; color: #999;">
+                Si el botón no funciona, usa el menú de tu navegador (⋮) y selecciona "Agregar a pantalla de inicio"
+            </p>
         </div>
     </div>
 
@@ -682,16 +685,37 @@
             // No mostrar automáticamente el botón flotante si está la pantalla de bloqueo
         });
 
+        // PWA
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('beforeinstallprompt capturado');
+        });
+
         // Botón en la pantalla de bloqueo
         forceInstallBtn.addEventListener('click', async () => {
             if (!deferredPrompt) {
-                alert('Para instalar la app, usa el menú de tu navegador (⋮) y selecciona "Agregar a pantalla de inicio" o "Instalar app"');
+                // Si no hay deferredPrompt, dar instrucciones
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                const isAndroid = /Android/.test(navigator.userAgent);
+                
+                if (isIOS) {
+                    alert('Para instalar en iOS:\n1. Toca el botón de compartir (cuadro con flecha)\n2. Selecciona "Agregar a la pantalla de inicio"');
+                } else if (isAndroid) {
+                    alert('Para instalar:\n1. Toca el menú del navegador (⋮)\n2. Selecciona "Agregar a pantalla de inicio" o "Instalar app"');
+                } else {
+                    alert('Para instalar la app, usa el menú de tu navegador y selecciona "Instalar app" o "Agregar a pantalla de inicio"');
+                }
                 return;
             }
             
             try {
                 await deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
+                
+                console.log('User choice:', outcome);
                 
                 // Solo mostrar mensaje de éxito, pero NO cargar la galería
                 if (outcome === 'accepted') {
@@ -708,6 +732,7 @@
                 deferredPrompt = null;
             } catch (error) {
                 console.error('Error al instalar:', error);
+                alert('Hubo un error. Por favor intenta instalar desde el menú de tu navegador.');
             }
         });
 

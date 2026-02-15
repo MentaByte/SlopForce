@@ -237,9 +237,93 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Pantalla de bloqueo */
+        #forceInstallScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 10002;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #forceInstallScreen.active {
+            display: flex;
+        }
+
+        .force-install-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .force-install-card .emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .force-install-card h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .force-install-card p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .install-giant-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+            animation: pulsebtn 2s infinite;
+        }
+
+        @keyframes pulsebtn {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.03);
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Pantalla de bloqueo -->
+    <div id="forceInstallScreen">
+        <div class="force-install-card">
+            <div class="emoji">📱</div>
+            <h2>¡Instala la App!</h2>
+            <p>Para usar Scroll Force, necesitas instalarla en tu pantalla de inicio.</p>
+            <button id="forceInstallBtn" class="install-giant-btn">📲 Instalar Ahora</button>
+            <p style="margin-top: 15px; font-size: 13px; color: #999;">
+                Si el botón no funciona, usa el menú de tu navegador (⋮)
+            </p>
+        </div>
+    </div>
+
     <!-- Pantalla de activación -->
     <div id="activationScreen" class="active">
         <div class="activation-card">
@@ -249,8 +333,8 @@
                 type="text" 
                 id="codeInput" 
                 class="code-input" 
-                placeholder="XXXX-XXXX-XXXX"
-                maxlength="14"
+                placeholder="XXXXXX"
+                maxlength="17"
             >
             <button id="activateBtn" class="activate-btn">Activar</button>
             <div class="spinner" id="loadingSpinner"></div>
@@ -294,6 +378,8 @@
         const fullScreenImage = document.getElementById('fullScreenImage');
         const configButton = document.getElementById('configButton');
         const installButton = document.getElementById('installButton');
+        const forceInstallScreen = document.getElementById('forceInstallScreen');
+        const forceInstallBtn = document.getElementById('forceInstallBtn');
 
         // IndexedDB
         let db;
@@ -372,9 +458,18 @@
                 sessionId = data.session_id;
 
                 activationScreen.classList.remove('active');
-                configButton.classList.add('show');
                 
-                await loadGallery();
+                // Detectar standalone
+                const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                                   window.navigator.standalone ||
+                                   document.referrer.includes('android-app://');
+                
+                if (!isStandalone) {
+                    forceInstallScreen.classList.add('active');
+                } else {
+                    configButton.classList.add('show');
+                    await loadGallery();
+                }
 
             } catch (error) {
                 errorMessage.textContent = error.message;
@@ -526,7 +621,7 @@
         document.body.addEventListener('touchstart', incrementTouchCount);
 
         activateBtn.addEventListener('click', () => {
-            const code = codeInput.value.trim().replace(/-/g, '');
+            const code = codeInput.value.trim();
             if (code) activateCode(code);
         });
 
@@ -534,28 +629,36 @@
             if (e.key === 'Enter') activateBtn.click();
         });
 
-        // Formatear código automáticamente mientras escribe
-        codeInput.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
-            
-            if (value.length > 12) {
-                value = value.substring(0, 12);
-            }
-            
-            let formatted = '';
-            for (let i = 0; i < value.length; i++) {
-                if (i === 4 || i === 8) {
-                    formatted += '-';
-                }
-                formatted += value[i];
-            }
-            
-            e.target.value = formatted.toUpperCase();
-        });
-
         // Click en botón config
         configButton.addEventListener('click', () => {
             window.location.href = './config.html';
+        });
+
+        // PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        forceInstallBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                alert('Para instalar, usa el menú de tu navegador (⋮) y selecciona "Agregar a pantalla de inicio"');
+                return;
+            }
+            
+            await deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                const card = document.querySelector('.force-install-card');
+                card.innerHTML = `
+                    <div class="emoji">✅</div>
+                    <h2>¡App Instalada!</h2>
+                    <p>Cierra esta pestaña y abre Scroll Force desde el ícono en tu pantalla de inicio.</p>
+                `;
+            }
+            deferredPrompt = null;
         });
 
         // Init
@@ -564,27 +667,43 @@
             loadConfig();
 
             const savedCode = localStorage.getItem('activationCode');
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                               window.navigator.standalone ||
+                               document.referrer.includes('android-app://');
             
+            // Standalone con código: saltar login
+            if (isStandalone && savedCode) {
+                activationCode = savedCode;
+                activationScreen.classList.remove('active');
+                configButton.classList.add('show');
+                await loadGallery();
+                
+                setTimeout(() => {
+                    lockOrientation();
+                    enterFullscreen();
+                }, 500);
+                return;
+            }
+            
+            // Navegador: verificar sesión
             if (savedCode) {
                 activationCode = savedCode;
                 const isValid = await validateSession(savedCode);
                 
                 if (isValid) {
                     activationScreen.classList.remove('active');
-                    configButton.classList.add('show');
-                    await loadGallery();
+                    
+                    if (!isStandalone) {
+                        forceInstallScreen.classList.add('active');
+                    } else {
+                        configButton.classList.add('show');
+                        await loadGallery();
+                    }
                 } else {
                     activationScreen.classList.add('active');
                 }
             } else {
                 activationScreen.classList.add('active');
-            }
-
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-                setTimeout(() => {
-                    lockOrientation();
-                    enterFullscreen();
-                }, 500);
             }
         });
     </script>

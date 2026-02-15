@@ -1,4 +1,4 @@
-const CACHE_NAME = 'emoji-force-v1';
+const CACHE_NAME = 'scroll_force';
 const urlsToCache = [
   './',
   './index.html',

@@ -488,6 +488,13 @@
             <div class="buttons">
                 <button class="btn btn-secondary" id="resetBtn">Restaurar Por Defecto</button>
             </div>
+            <div class="buttons" style="margin-top: 10px;">
+                <button class="btn btn-danger" id="logoutBtn">🚪 Cerrar Sesión</button>
+            </div>
+            <div class="info" style="margin-top: 15px; background: #e3f2fd; color: #1976d2;">
+                <strong>ℹ️ Sobre Cerrar Sesión:</strong>
+                Al cerrar sesión podrás iniciar en otro dispositivo. Solo puedes cambiar de dispositivo 1 vez al día. Tus imágenes y configuraciones se mantienen guardadas.
+            </div>
         </div>
 
         <div class="back-link">
@@ -509,6 +516,7 @@
         const forceSelect = document.getElementById('forceSelect');
         const touchThresholdSelect = document.getElementById('touchThresholdSelect');
         const resetBtn = document.getElementById('resetBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
         const touchesInfo = document.getElementById('touchesInfo');
         
         // Elementos de opacidad
@@ -793,6 +801,62 @@
                     await renderImageGrid();
                     alert('Configuración restaurada');
                 };
+            }
+        });
+
+        // Cerrar sesión
+        logoutBtn.addEventListener('click', async () => {
+            const confirmLogout = confirm(
+                '¿Estás seguro de cerrar sesión?\n\n' +
+                'Deberás ingresar tu código nuevamente para usar la app.\n' +
+                'Tus imágenes y configuraciones se mantendrán guardadas.'
+            );
+
+            if (!confirmLogout) return;
+
+            try {
+                const SUPABASE_URL = 'https://zgatennqbagmyfbpiakr.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnYXRlbm5xYmFnbXlmYnBpYWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwMTg3NTEsImV4cCI6MjA4NjU5NDc1MX0.5c_IoL3_PM1zwFsuvblkoCoWbP9-4BSaMcIwSasLprw';
+                
+                const sessionId = localStorage.getItem('sessionId');
+                const activationCode = localStorage.getItem('activationCode');
+
+                // Solo intentar cerrar sesión en el servidor si tenemos un código válido
+                if (activationCode && activationCode !== 'standalone-mode') {
+                    // Llamar al endpoint de logout
+                    const response = await fetch(`${SUPABASE_URL}/functions/v1/logout`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        },
+                        body: JSON.stringify({
+                            code: activationCode,
+                            session_id: sessionId
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const data = await response.json();
+                        console.error('Error en logout:', data.error);
+                    }
+                }
+
+                // Limpiar localStorage (mantener configuraciones)
+                localStorage.removeItem('activationCode');
+                localStorage.removeItem('sessionId');
+
+                // Redirigir a index.html
+                alert('Sesión cerrada correctamente.');
+                window.location.href = './index.html';
+
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+                // Aunque falle la llamada al servidor, cerramos localmente
+                localStorage.removeItem('activationCode');
+                localStorage.removeItem('sessionId');
+                alert('Sesión cerrada localmente.');
+                window.location.href = './index.html';
             }
         });
 

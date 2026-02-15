@@ -552,56 +552,6 @@
             };
         }
 
-        // Activar código
-        async function activateCode(code) {
-            try {
-                loadingSpinner.classList.add('show');
-                errorMessage.classList.remove('show');
-                activateBtn.disabled = true;
-
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/loginWithCode`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    },
-                    body: JSON.stringify({
-                        code: code,
-                        deviceInfo: JSON.stringify(getDeviceInfo())
-                    })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Error al activar código');
-                }
-
-                localStorage.setItem('activationCode', data.code);
-                localStorage.setItem('sessionId', data.session_id);
-                
-                activationCode = data.code;
-                sessionId = data.session_id;
-
-                activationScreen.classList.remove('active');
-                
-                // Si está en navegador (no standalone), mostrar pantalla de instalación
-                if (!isStandalone()) {
-                    forceInstallScreen.classList.add('active');
-                } else {
-                    // Si está en standalone, cargar la galería normalmente
-                    configButton.classList.add('show');
-                    await loadGallery();
-                }
-
-            } catch (error) {
-                errorMessage.textContent = error.message;
-                errorMessage.classList.add('show');
-            } finally {
-                loadingSpinner.classList.remove('show');
-                activateBtn.disabled = false;
-            }
-        }
 
         // Validar sesión
         async function validateSession(code) {

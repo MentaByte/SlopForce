@@ -1,4 +1,4 @@
-const CACHE_NAME = 'scroll_force_v1.2'; //forzando actualizacion con pantalla de logout
+const CACHE_NAME = 'scroll_force_v1.3'; //forzando actualizacion
 const urlsToCache = [
   './',
   './index.html',

@@ -326,12 +326,22 @@
         function loadConfig() {
             const savedForceIndex = localStorage.getItem('forceImageIndex');
             const savedTouchThreshold = localStorage.getItem('touchThreshold');
+            const savedCounterOpacity = localStorage.getItem('counterOpacity');
+            const savedConfigBtnOpacity = localStorage.getItem('configBtnOpacity');
             
             if (savedForceIndex) {
                 FORCE_IMAGE_INDEX = parseInt(savedForceIndex);
             }
             if (savedTouchThreshold) {
                 TOUCH_THRESHOLD = parseInt(savedTouchThreshold);
+            }
+            if (savedCounterOpacity) {
+                const opacity = parseInt(savedCounterOpacity) / 100;
+                touchCounterElement.style.opacity = opacity;
+            }
+            if (savedConfigBtnOpacity) {
+                const opacity = parseInt(savedConfigBtnOpacity) / 100;
+                configButton.style.opacity = opacity;
             }
         }
 

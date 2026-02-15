@@ -231,6 +231,113 @@
             text-decoration: none;
             font-size: 16px;
         }
+
+        /* Sliders de opacidad */
+        .opacity-control {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .opacity-control label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .slider-container input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .opacity-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        /* Preview de opacidad */
+        .opacity-preview {
+            margin-top: 15px;
+            padding: 20px;
+            background: #000;
+            border-radius: 10px;
+            position: relative;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-counter {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #cccccc;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            user-select: none;
+        }
+
+        .preview-config-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 35px;
+            height: 35px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 50%;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .opacity-preview p {
+            color: #666;
+            font-size: 13px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -244,7 +351,7 @@
             <h2>Tus Imágenes</h2>
             <div class="info">
                 <strong>Instrucciones:</strong>
-                Toca cada cuadro para subir una imagen desde tu galería. La imagen marcada en rojo será la que se forzará después de 10 toques.
+                Toca cada cuadro para subir una imagen desde tu galería. La imagen marcada en rojo será la que se forzará después de <span id="touchesInfo">10</span> toques.
             </div>
 
             <div class="image-grid" id="imageGrid"></div>
@@ -286,6 +393,25 @@
                     <option value="20">20 toques</option>
                 </select>
             </div>
+
+            <div class="opacity-control">
+                <label>Opacidad del Contador de Toques:</label>
+                <div class="slider-container">
+                    <input type="range" id="counterOpacitySlider" min="0" max="100" value="15">
+                    <span class="opacity-value" id="counterOpacityValue">15%</span>
+                </div>
+                
+                <label style="margin-top: 10px;">Opacidad del Botón de Configuración:</label>
+                <div class="slider-container">
+                    <input type="range" id="configBtnOpacitySlider" min="0" max="100" value="10">
+                    <span class="opacity-value" id="configBtnOpacityValue">10%</span>
+                </div>
+
+                <div class="opacity-preview">
+                    <div class="preview-counter" id="previewCounter">42</div>
+                    <div class="preview-config-btn" id="previewConfigBtn">⚙️</div>
+                </div>
+            </div>
         </div>
 
         <div class="card">
@@ -313,6 +439,15 @@
         const forceSelect = document.getElementById('forceSelect');
         const touchThresholdSelect = document.getElementById('touchThresholdSelect');
         const resetBtn = document.getElementById('resetBtn');
+        const touchesInfo = document.getElementById('touchesInfo');
+        
+        // Elementos de opacidad
+        const counterOpacitySlider = document.getElementById('counterOpacitySlider');
+        const configBtnOpacitySlider = document.getElementById('configBtnOpacitySlider');
+        const counterOpacityValue = document.getElementById('counterOpacityValue');
+        const configBtnOpacityValue = document.getElementById('configBtnOpacityValue');
+        const previewCounter = document.getElementById('previewCounter');
+        const previewConfigBtn = document.getElementById('previewConfigBtn');
 
         // Init IndexedDB
         function initDB() {
@@ -467,6 +602,23 @@
         touchThresholdSelect.addEventListener('change', (e) => {
             const touchThreshold = parseInt(e.target.value);
             localStorage.setItem('touchThreshold', touchThreshold);
+            touchesInfo.textContent = touchThreshold;
+        });
+
+        // Control de opacidad del contador
+        counterOpacitySlider.addEventListener('input', (e) => {
+            const opacity = parseInt(e.target.value);
+            counterOpacityValue.textContent = `${opacity}%`;
+            previewCounter.style.opacity = opacity / 100;
+            localStorage.setItem('counterOpacity', opacity);
+        });
+
+        // Control de opacidad del botón de configuración
+        configBtnOpacitySlider.addEventListener('input', (e) => {
+            const opacity = parseInt(e.target.value);
+            configBtnOpacityValue.textContent = `${opacity}%`;
+            previewConfigBtn.style.opacity = opacity / 100;
+            localStorage.setItem('configBtnOpacity', opacity);
         });
 
         // Restaurar valores por defecto
@@ -501,6 +653,25 @@
             const savedTouchThreshold = localStorage.getItem('touchThreshold');
             if (savedTouchThreshold) {
                 touchThresholdSelect.value = savedTouchThreshold;
+                touchesInfo.textContent = savedTouchThreshold;
+            }
+
+            // Cargar opacidad del contador
+            const savedCounterOpacity = localStorage.getItem('counterOpacity');
+            if (savedCounterOpacity) {
+                const opacity = parseInt(savedCounterOpacity);
+                counterOpacitySlider.value = opacity;
+                counterOpacityValue.textContent = `${opacity}%`;
+                previewCounter.style.opacity = opacity / 100;
+            }
+
+            // Cargar opacidad del botón de configuración
+            const savedConfigBtnOpacity = localStorage.getItem('configBtnOpacity');
+            if (savedConfigBtnOpacity) {
+                const opacity = parseInt(savedConfigBtnOpacity);
+                configBtnOpacitySlider.value = opacity;
+                configBtnOpacityValue.textContent = `${opacity}%`;
+                previewConfigBtn.style.opacity = opacity / 100;
             }
 
             await renderImageGrid();

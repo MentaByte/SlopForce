@@ -488,6 +488,13 @@
             <div class="buttons">
                 <button class="btn btn-secondary" id="resetBtn">Restaurar Por Defecto</button>
             </div>
+            <div class="buttons" style="margin-top: 10px;">
+                <button class="btn btn-danger" id="logoutBtn">🚪 Cerrar Sesión</button>
+            </div>
+            <div class="info" style="margin-top: 15px; background: #e3f2fd; color: #1976d2;">
+                <strong>ℹ️ Sobre Cerrar Sesión:</strong>
+                Al cerrar sesión podrás iniciar en otro dispositivo. Solo puedes cambiar de dispositivo 1 vez al día. Tus imágenes y configuraciones se mantienen guardadas.
+            </div>
         </div>
 
         <div class="back-link">
@@ -780,7 +787,93 @@
         });
 
         // Restaurar valores por defecto
+        resetBtn.addEventListener('click', async () => {
+            if (confirm('¿Seguro que quieres eliminar todas las imágenes personalizadas?')) {
+                const transaction = db.transaction(['images'], 'readwrite');
+                const store = transaction.objectStore('images');
+                const request = store.clear();
 
+                request.onsuccess = async () => {
+                    forceImageIndex = 4;
+                    forceSelect.value = '4';
+                    localStorage.setItem('forceImageIndex', 4);
+                    await renderImageGrid();
+                    alert('Configuración restaurada');
+                };
+            }
+        });
+
+        // Cerrar sesión
+        logoutBtn.addEventListener('click', async () => {
+            const confirmLogout = confirm(
+                '¿Estás seguro de cerrar sesión?\n\n' +
+                'Deberás ingresar tu código nuevamente para usar la app.\n' +
+                'Tus imágenes y configuraciones se mantendrán guardadas.'
+            );
+
+            if (!confirmLogout) return;
+
+            const activationCode = localStorage.getItem('activationCode');
+            const sessionId = localStorage.getItem('sessionId');
+
+            if (!activationCode || activationCode === 'standalone-mode') {
+                alert('No hay sesión activa para cerrar.');
+                return;
+            }
+
+            logoutBtn.disabled = true;
+            logoutBtn.textContent = '⏳ Cerrando sesión...';
+
+            try {
+                const SUPABASE_URL = 'https://zgatennqbagmyfbpiakr.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnYXRlbm5xYmFnbXlmYnBpYWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwMTg3NTEsImV4cCI6MjA4NjU5NDc1MX0.5c_IoL3_PM1zwFsuvblkoCoWbP9-4BSaMcIwSasLprw';
+                
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/logout`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        code: activationCode,
+                        session_id: sessionId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Error al cerrar sesión en el servidor');
+                }
+
+                console.log('✅ Sesión cerrada en el servidor');
+
+                localStorage.setItem('appLocked', 'true');
+                localStorage.setItem('lockReason', 'logout');
+                localStorage.setItem('lockTimestamp', new Date().toISOString());
+
+                localStorage.removeItem('activationCode');
+                localStorage.removeItem('sessionId');
+
+                alert('✅ Sesión cerrada correctamente.\n\nLa app se bloqueará ahora.');
+                window.location.href = './index.html';
+
+            } catch (error) {
+                console.error('❌ Error al cerrar sesión:', error);
+                
+                logoutBtn.disabled = false;
+                logoutBtn.textContent = '🚪 Cerrar Sesión';
+
+                alert(
+                    '❌ No se pudo cerrar la sesión en el servidor.\n\n' +
+                    'Error: ' + error.message + '\n\n' +
+                    'La sesión NO se cerró y puedes seguir usando la app.'
+                );
+            }
+        });
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
             await initDB();
 
             // Cargar índice de forzaje guardado

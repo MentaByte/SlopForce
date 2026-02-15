@@ -201,6 +201,84 @@
             z-index: 9999;
         }
 
+        /* Pantalla de bloqueo para forzar instalación */
+        #forceInstallScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 10002;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #forceInstallScreen.active {
+            display: flex;
+        }
+
+        .force-install-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .force-install-card .emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .force-install-card h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .force-install-card p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .install-giant-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        .install-giant-btn:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+            }
+            50% {
+                transform: scale(1.03);
+                box-shadow: 0 12px 35px rgba(76, 175, 80, 0.6);
+            }
+        }
+
         /* Botón de instalación - GIGANTE */
         #installButton {
             position: fixed;
@@ -298,6 +376,16 @@
     </style>
 </head>
 <body>
+    <!-- Pantalla de bloqueo para forzar instalación -->
+    <div id="forceInstallScreen">
+        <div class="force-install-card">
+            <div class="emoji">📱</div>
+            <h2>¡Instala la App!</h2>
+            <p>Para usar Scroll Force, necesitas instalarla en tu pantalla de inicio. Es rápido y solo toma un toque.</p>
+            <button id="forceInstallBtn" class="install-giant-btn">📲 Instalar Ahora</button>
+        </div>
+    </div>
+
     <!-- Overlay para instalación -->
     <div id="installOverlay"></div>
     
@@ -307,7 +395,7 @@
     <!-- Pantalla de activación -->
     <div id="activationScreen" class="active">
         <div class="activation-card">
-            <h1>Scroll Force</h1>
+            <h1> Scroll Force</h1>
             <p id="activationMessage">Ingresa tu código de activación</p>
             <input 
                 type="text" 
@@ -362,6 +450,8 @@
         const configButton = document.getElementById('configButton');
         const installButton = document.getElementById('installButton');
         const installOverlay = document.getElementById('installOverlay');
+        const forceInstallScreen = document.getElementById('forceInstallScreen');
+        const forceInstallBtn = document.getElementById('forceInstallBtn');
         const installHint = document.getElementById('installHint');
         const activationMessage = document.getElementById('activationMessage');
 
@@ -452,9 +542,15 @@
                 sessionId = data.session_id;
 
                 activationScreen.classList.remove('active');
-                configButton.classList.add('show');
                 
-                await loadGallery();
+                // Si está en navegador (no standalone), mostrar pantalla de instalación
+                if (!isStandalone()) {
+                    forceInstallScreen.classList.add('active');
+                } else {
+                    // Si está en standalone, cargar la galería normalmente
+                    configButton.classList.add('show');
+                    await loadGallery();
+                }
 
             } catch (error) {
                 errorMessage.textContent = error.message;
@@ -584,10 +680,26 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installButton.classList.add('show');
-            installOverlay.classList.add('show');
+            // No mostrar automáticamente el botón flotante si está la pantalla de bloqueo
         });
 
+        // Botón en la pantalla de bloqueo
+        forceInstallBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                alert('Para instalar la app, usa el menú de tu navegador (⋮) y selecciona "Agregar a pantalla de inicio" o "Instalar app"');
+                return;
+            }
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                forceInstallScreen.classList.remove('active');
+                configButton.classList.add('show');
+                await loadGallery();
+            }
+            deferredPrompt = null;
+        });
+
+        // Botón flotante (ahora sin uso, pero lo dejamos por si acaso)
         installButton.addEventListener('click', async () => {
             if (!deferredPrompt) return;
             deferredPrompt.prompt();
@@ -665,8 +777,15 @@
                 
                 if (isValid) {
                     activationScreen.classList.remove('active');
-                    configButton.classList.add('show');
-                    await loadGallery();
+                    
+                    // Si está en navegador, mostrar pantalla de instalación
+                    if (!standalone) {
+                        forceInstallScreen.classList.add('active');
+                    } else {
+                        // Si está en standalone, cargar galería
+                        configButton.classList.add('show');
+                        await loadGallery();
+                    }
                 } else {
                     activationScreen.classList.add('active');
                 }

@@ -119,110 +119,6 @@
             display: block;
         }
 
-        /* Pantalla de bloqueo */
-        #lockScreen {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            z-index: 10001;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        #lockScreen.active {
-            display: flex;
-        }
-
-        .lock-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 40px 30px;
-            max-width: 450px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            text-align: center;
-        }
-
-        .lock-card .emoji {
-            font-size: 80px;
-            margin-bottom: 20px;
-        }
-
-        .lock-card h1 {
-            font-size: 28px;
-            margin-bottom: 15px;
-            color: #e74c3c;
-        }
-
-        .lock-card p {
-            color: #555;
-            margin-bottom: 20px;
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        .lock-card .instructions {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .lock-card .instructions h3 {
-            color: #333;
-            font-size: 16px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .lock-card .instructions .platform {
-            margin-bottom: 15px;
-        }
-
-        .lock-card .instructions .platform-title {
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .lock-card .instructions ol {
-            margin: 0;
-            padding-left: 20px;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .lock-card .instructions li {
-            margin-bottom: 5px;
-        }
-
-        .browser-btn {
-            width: 100%;
-            padding: 15px;
-            background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 10px;
-        }
-
-        .browser-btn:active {
-            transform: scale(0.98);
-            background: #f0f4ff;
-        }
-
         /* Galería principal */
         .gallery-container {
             width: 100vw;
@@ -528,43 +424,6 @@
         </div>
     </div>
 
-    <!-- Pantalla de bloqueo -->
-    <div id="lockScreen">
-        <div class="lock-card">
-            <div class="emoji">🔒</div>
-            <h1>Sesión Cerrada</h1>
-            <p>Esta sesión fue cerrada. Para volver a usar tu código en este dispositivo, primero debes desinstalar la app.</p>
-            
-            <div class="instructions">
-                <h3>📱 Cómo Desinstalar</h3>
-                
-                <div class="platform">
-                    <div class="platform-title">Android / Samsung:</div>
-                    <ol>
-                        <li>Mantén presionado el ícono de la app</li>
-                        <li>Selecciona "Desinstalar" o "Eliminar"</li>
-                        <li>Confirma la desinstalación</li>
-                    </ol>
-                </div>
-                
-                <div class="platform">
-                    <div class="platform-title">iPhone / iPad:</div>
-                    <ol>
-                        <li>Mantén presionado el ícono de la app</li>
-                        <li>Toca "Eliminar App"</li>
-                        <li>Selecciona "Eliminar de Pantalla de Inicio"</li>
-                    </ol>
-                </div>
-            </div>
-
-            <p style="font-size: 13px; color: #999; margin-top: 20px;">
-                Después de desinstalar, podrás volver a ingresar tu código desde el navegador.
-            </p>
-            
-            <button id="openBrowserBtn" class="browser-btn">🌐 Abrir en Navegador</button>
-        </div>
-    </div>
-
     <!-- Galería principal -->
     <div class="gallery-container" id="galleryContainer">
         <div class="gallery" id="gallery"></div>
@@ -591,8 +450,6 @@
 
         // Elementos DOM
         const activationScreen = document.getElementById('activationScreen');
-        const lockScreen = document.getElementById('lockScreen');
-        const openBrowserBtn = document.getElementById('openBrowserBtn');
         const codeInput = document.getElementById('codeInput');
         const activateBtn = document.getElementById('activateBtn');
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -717,14 +574,7 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    // Manejar errores específicos
-                    if (data.code === 'ALREADY_LOGGED_IN') {
-                        throw new Error('Este código ya está en uso en otro dispositivo. Debes cerrar sesión en el otro dispositivo primero.');
-                    } else if (data.code === 'DAILY_LIMIT_REACHED') {
-                        throw new Error('Has alcanzado el límite de cambios de dispositivo por hoy. Intenta nuevamente mañana.');
-                    } else {
-                        throw new Error(data.error || 'Error al activar código');
-                    }
+                    throw new Error(data.error || 'Error al activar código');
                 }
 
                 localStorage.setItem('activationCode', data.code);
@@ -1025,24 +875,6 @@
             window.location.href = './config.html';
         });
 
-        // Botón de abrir en navegador desde pantalla de bloqueo
-        openBrowserBtn.addEventListener('click', () => {
-            // Obtener la URL base sin el modo standalone
-            const url = window.location.origin + window.location.pathname;
-            
-            // Intentar abrir en el navegador
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Scroll Force',
-                    url: url
-                }).catch(() => {
-                    alert('Copia este link y ábrelo en tu navegador:\n\n' + url);
-                });
-            } else {
-                alert('Copia este link y ábrelo en tu navegador:\n\n' + url);
-            }
-        });
-
         // Detectar si está en modo standalone (PWA instalada)
         function isStandalone() {
             return window.matchMedia('(display-mode: standalone)').matches ||
@@ -1054,16 +886,6 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await initDB();
             loadConfig();
-
-            // 🔒 VERIFICAR CANDADO PRIMERO (antes que todo)
-            const isLocked = localStorage.getItem('appLocked') === 'true';
-            
-            if (isLocked) {
-                // Mostrar pantalla de bloqueo y detener ejecución
-                lockScreen.classList.add('active');
-                activationScreen.classList.remove('active');
-                return; // No ejecutar nada más
-            }
 
             const savedCode = localStorage.getItem('activationCode');
             const standalone = isStandalone();

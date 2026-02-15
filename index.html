@@ -465,9 +465,6 @@
                 <button class="lock-btn lock-btn-danger" id="uninstallGuideBtn">
                     📖 Ver guía de desinstalación
                 </button>
-                <button class="lock-btn lock-btn-secondary" id="refreshLockBtn">
-                    🔄 Verificar de nuevo
-                </button>
             </div>
         </div>
     </div>
@@ -475,12 +472,12 @@
     <!-- Pantalla de activación -->
     <div id="activationScreen">
         <div class="activation-card">
-            <h1>Scroll Force v1.2 BETA</h1>
+            <h1>Scroll Force v1.4 BETA</h1>
             <p>Ingresa tu código de activación para continuar</p>
             <input type="text" 
                    id="codeInput" 
                    class="code-input" 
-                   placeholder="EMOJI-XXXX-XXXX"
+                   placeholder="XXXXXXXX"
                    autocomplete="off">
             <button id="activateBtn" class="activate-btn">Activar</button>
             <div id="errorMessage" class="error-message"></div>
@@ -533,7 +530,6 @@
         const lockMessage = document.getElementById('lockMessage');
         const lockReasonText = document.getElementById('lockReasonText');
         const uninstallGuideBtn = document.getElementById('uninstallGuideBtn');
-        const refreshLockBtn = document.getElementById('refreshLockBtn');
         
         const activationScreen = document.getElementById('activationScreen');
         const codeInput = document.getElementById('codeInput');
@@ -633,6 +629,9 @@
                 galleryContainer.style.pointerEvents = 'none';
                 galleryContainer.style.opacity = '0';
                 
+                // Prevenir botón atrás
+                preventBackWhenLocked();
+                
                 return true; // App está bloqueada
             }
 
@@ -670,57 +669,28 @@
             alert(guide);
         });
 
-        refreshLockBtn.addEventListener('click', async () => {
-            refreshLockBtn.textContent = '🔄 Verificando...';
-            refreshLockBtn.disabled = true;
-
-            const savedCode = localStorage.getItem('activationCode');
-            const sessionId = localStorage.getItem('sessionId');
-
-            if (!savedCode || savedCode === 'standalone-mode') {
-                // Si no hay código o es modo standalone, limpiar bloqueo y pedir código
-                localStorage.removeItem('appLocked');
-                localStorage.removeItem('lockReason');
-                localStorage.removeItem('lockTimestamp');
-                window.location.reload();
-                return;
-            }
-
-            try {
-                // Verificar con el servidor si esta sesión sigue siendo válida
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/validate-session`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    },
-                    body: JSON.stringify({
-                        code: savedCode,
-                        session_id: sessionId
-                    })
+        // Prevenir botón atrás cuando la app está bloqueada
+        function preventBackWhenLocked() {
+            const appLocked = localStorage.getItem('appLocked');
+            
+            if (appLocked === 'true') {
+                // Agregar entrada al historial para prevenir salida
+                window.history.pushState(null, '', window.location.href);
+                
+                // Interceptar botón atrás
+                window.addEventListener('popstate', function(event) {
+                    const stillLocked = localStorage.getItem('appLocked');
+                    
+                    if (stillLocked === 'true') {
+                        // Prevenir navegación hacia atrás
+                        window.history.pushState(null, '', window.location.href);
+                        
+                        // Mostrar mensaje al usuario
+                        alert('⚠️ La app está bloqueada.\n\nDebes desinstalarla para poder usarla nuevamente.');
+                    }
                 });
-
-                const data = await response.json();
-
-                if (data.is_valid && data.is_current_session) {
-                    // La sesión es válida, desbloquear
-                    localStorage.removeItem('appLocked');
-                    localStorage.removeItem('lockReason');
-                    localStorage.removeItem('lockTimestamp');
-                    window.location.reload();
-                } else {
-                    // Sesión no válida, mantener bloqueado
-                    alert('❌ Esta sesión ya no es válida.\n\nTu código está activo en otro dispositivo.');
-                    refreshLockBtn.textContent = '🔄 Verificar de nuevo';
-                    refreshLockBtn.disabled = false;
-                }
-            } catch (error) {
-                console.error('Error al verificar sesión:', error);
-                alert('❌ No se pudo verificar el estado de la sesión.\n\nVerifica tu conexión a internet.');
-                refreshLockBtn.textContent = '🔄 Verificar de nuevo';
-                refreshLockBtn.disabled = false;
             }
-        });
+        }
 
         // Activar código
         async function activateCode(code) {

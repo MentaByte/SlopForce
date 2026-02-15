@@ -781,20 +781,7 @@
             scrollHorizontal.classList.remove('selected');
         });
 
-        scrollHorizontal.addEventListener('click', () => {
-            localStorage.setItem('scrollDirection', 'horizontal');
-            scrollHorizontal.classList.add('selected');
-            scrollVertical.classList.remove('selected');
-        });
 
-
-            if (savedForceIndex) {
-                forceImageIndex = parseInt(savedForceIndex);
-                forceSelect.value = forceImageIndex;
-            }
-
-            // Cargar número de toques guardado
-            const savedTouchThreshold = localStorage.getItem('touchThreshold');
             if (savedTouchThreshold) {
                 touchThresholdSelect.value = savedTouchThreshold;
                 touchesInfo.textContent = savedTouchThreshold;

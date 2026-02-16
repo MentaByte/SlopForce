@@ -338,47 +338,6 @@
             font-size: 13px;
             text-align: center;
         }
-
-        /* Estilos para botones de selección */
-        .option-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .option-btn {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            background: white;
-            color: #333;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-
-        .option-btn:hover {
-            border-color: #667eea;
-        }
-
-        .option-btn.selected {
-            border-color: #667eea;
-            border-width: 3px;
-            background: #f0f4ff;
-            color: #667eea;
-            transform: scale(1.02);
-        }
-
-        .option-btn.dark {
-            background: #333;
-            color: white;
-        }
-
-        .option-btn.dark.selected {
-            background: #667eea;
-        }
     </style>
 </head>
 <body>
@@ -457,43 +416,12 @@
                     <div class="preview-config-btn" id="previewConfigBtn">⚙️</div>
                 </div>
             </div>
-
-            <div class="opacity-control">
-                <label>Color de Fuente del Contador:</label>
-                <div class="option-buttons">
-                    <button class="option-btn" id="counterColorWhite" data-color="white">⚪ Blanco</button>
-                    <button class="option-btn dark" id="counterColorBlack" data-color="black">⚫ Negro</button>
-                </div>
-            </div>
-
-            <div class="opacity-control">
-                <label>Color de Fondo:</label>
-                <div class="option-buttons">
-                    <button class="option-btn dark" id="bgColorBlack" data-color="black">⚫ Negro</button>
-                    <button class="option-btn" id="bgColorWhite" data-color="white">⚪ Blanco</button>
-                </div>
-            </div>
-
-            <div class="opacity-control">
-                <label>Dirección del Scroll:</label>
-                <div class="option-buttons">
-                    <button class="option-btn" id="scrollVertical" data-direction="vertical">↕️ Vertical</button>
-                    <button class="option-btn" id="scrollHorizontal" data-direction="horizontal">↔️ Horizontal</button>
-                </div>
-            </div>
         </div>
 
         <div class="card">
             <h2>Acciones</h2>
             <div class="buttons">
                 <button class="btn btn-secondary" id="resetBtn">Restaurar Por Defecto</button>
-            </div>
-            <div class="buttons" style="margin-top: 10px;">
-                <button class="btn btn-danger" id="logoutBtn">🚪 Cerrar Sesión</button>
-            </div>
-            <div class="info" style="margin-top: 15px; background: #e3f2fd; color: #1976d2;">
-                <strong>ℹ️ Sobre Cerrar Sesión:</strong>
-                Al cerrar sesión podrás iniciar en otro dispositivo. Solo puedes cambiar de dispositivo 1 vez al día. Tus imágenes y configuraciones se mantienen guardadas.
             </div>
         </div>
 
@@ -525,14 +453,6 @@
         const configBtnOpacityValue = document.getElementById('configBtnOpacityValue');
         const previewCounter = document.getElementById('previewCounter');
         const previewConfigBtn = document.getElementById('previewConfigBtn');
-
-        // Elementos de configuración adicional
-        const counterColorWhite = document.getElementById('counterColorWhite');
-        const counterColorBlack = document.getElementById('counterColorBlack');
-        const bgColorBlack = document.getElementById('bgColorBlack');
-        const bgColorWhite = document.getElementById('bgColorWhite');
-        const scrollVertical = document.getElementById('scrollVertical');
-        const scrollHorizontal = document.getElementById('scrollHorizontal');
 
         // Init IndexedDB
         function initDB() {
@@ -743,49 +663,6 @@
             localStorage.setItem('configBtnOpacity', opacity);
         });
 
-        // Control de color de fuente del contador
-        counterColorWhite.addEventListener('click', () => {
-            localStorage.setItem('counterColor', 'white');
-            counterColorWhite.classList.add('selected');
-            counterColorBlack.classList.remove('selected');
-            previewCounter.style.color = '#cccccc';
-        });
-
-        counterColorBlack.addEventListener('click', () => {
-            localStorage.setItem('counterColor', 'black');
-            counterColorBlack.classList.add('selected');
-            counterColorWhite.classList.remove('selected');
-            previewCounter.style.color = '#333333';
-        });
-
-        // Control de color de fondo
-        bgColorBlack.addEventListener('click', () => {
-            localStorage.setItem('bgColor', 'black');
-            bgColorBlack.classList.add('selected');
-            bgColorWhite.classList.remove('selected');
-            document.querySelector('.opacity-preview').style.background = '#000';
-        });
-
-        bgColorWhite.addEventListener('click', () => {
-            localStorage.setItem('bgColor', 'white');
-            bgColorWhite.classList.add('selected');
-            bgColorBlack.classList.remove('selected');
-            document.querySelector('.opacity-preview').style.background = '#fff';
-        });
-
-        // Control de dirección del scroll
-        scrollVertical.addEventListener('click', () => {
-            localStorage.setItem('scrollDirection', 'vertical');
-            scrollVertical.classList.add('selected');
-            scrollHorizontal.classList.remove('selected');
-        });
-
-        scrollHorizontal.addEventListener('click', () => {
-            localStorage.setItem('scrollDirection', 'horizontal');
-            scrollHorizontal.classList.add('selected');
-            scrollVertical.classList.remove('selected');
-        });
-
         // Restaurar valores por defecto
         resetBtn.addEventListener('click', async () => {
             if (confirm('¿Seguro que quieres eliminar todas las imágenes personalizadas?')) {
@@ -800,77 +677,6 @@
                     await renderImageGrid();
                     alert('Configuración restaurada');
                 };
-            }
-        });
-
-        // Cerrar sesión
-        logoutBtn.addEventListener('click', async () => {
-            const confirmLogout = confirm(
-                '¿Estás seguro de cerrar sesión?\n\n' +
-                'Deberás ingresar tu código nuevamente para usar la app.\n' +
-                'Tus imágenes y configuraciones se mantendrán guardadas.'
-            );
-
-            if (!confirmLogout) return;
-
-            const activationCode = localStorage.getItem('activationCode');
-            const sessionId = localStorage.getItem('sessionId');
-
-            if (!activationCode || activationCode === 'standalone-mode') {
-                alert('No hay sesión activa para cerrar.');
-                return;
-            }
-
-            logoutBtn.disabled = true;
-            logoutBtn.textContent = '⏳ Cerrando sesión...';
-
-            const SUPABASE_URL = 'https://zgatennqbagmyfbpiakr.supabase.co';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnYXRlbm5xYmFnbXlmYnBpYWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwMTg3NTEsImV4cCI6MjA4NjU5NDc1MX0.5c_IoL3_PM1zwFsuvblkoCoWbP9-4BSaMcIwSasLprw';
-
-            try {
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/logout`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    },
-                    body: JSON.stringify({
-                        code: activationCode,
-                        session_id: sessionId
-                    })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'Error del servidor');
-                }
-
-                // ✅ ÉXITO CONFIRMADO - Ahora sí bloquear localmente
-                console.log('✅ Sesión cerrada en el servidor');
-                
-                localStorage.setItem('appLocked', 'true');
-                localStorage.setItem('lockReason', 'logout');
-                localStorage.setItem('lockTimestamp', new Date().toISOString());
-
-                localStorage.removeItem('activationCode');
-                localStorage.removeItem('sessionId');
-
-                alert('✅ Sesión cerrada correctamente.\n\nLa app se bloqueará ahora.');
-                window.location.href = './index.html';
-
-            } catch (error) {
-                console.error('❌ Error al cerrar sesión:', error);
-                
-                logoutBtn.disabled = false;
-                logoutBtn.textContent = '🚪 Cerrar Sesión';
-
-                alert(
-                    '❌ No se pudo cerrar la sesión en el servidor.\n\n' +
-                    'Error: ' + error.message + '\n\n' +
-                    'Por favor, verifica tu conexión a internet e intenta de nuevo.\n\n' +
-                    'La app NO se cerrará hasta confirmar con el servidor.'
-                );
             }
         });
 
@@ -908,34 +714,6 @@
                 configBtnOpacitySlider.value = opacity;
                 configBtnOpacityValue.textContent = `${opacity}%`;
                 previewConfigBtn.style.opacity = opacity / 100;
-            }
-
-            // Cargar color de fuente del contador
-            const savedCounterColor = localStorage.getItem('counterColor') || 'white';
-            if (savedCounterColor === 'white') {
-                counterColorWhite.classList.add('selected');
-                previewCounter.style.color = '#cccccc';
-            } else {
-                counterColorBlack.classList.add('selected');
-                previewCounter.style.color = '#333333';
-            }
-
-            // Cargar color de fondo
-            const savedBgColor = localStorage.getItem('bgColor') || 'black';
-            if (savedBgColor === 'black') {
-                bgColorBlack.classList.add('selected');
-                document.querySelector('.opacity-preview').style.background = '#000';
-            } else {
-                bgColorWhite.classList.add('selected');
-                document.querySelector('.opacity-preview').style.background = '#fff';
-            }
-
-            // Cargar dirección del scroll
-            const savedScrollDirection = localStorage.getItem('scrollDirection') || 'vertical';
-            if (savedScrollDirection === 'vertical') {
-                scrollVertical.classList.add('selected');
-            } else {
-                scrollHorizontal.classList.add('selected');
             }
 
             await renderImageGrid();
